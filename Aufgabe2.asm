@@ -1,60 +1,39 @@
 SECTION .data
-	n DD 100
+	n DD 50
 	ergebnis DQ 0
-	z1h DD 0
-	z1l DD 0
-	z2h DD 0
-	z2l DD 0
 
 SECTION .text
 	global main
 
 main:
-	push ebp
-	mov ebp, esp
-
-	; Stack vorinitialisieren mit High und Low Variablen
-	push 0 ; Zahl 1 Low
-	push 1 ; Zahl 2 Low
-	push 0 ; Zahl 1 High
-	push 0 ; Zahl 2 High
-	
-	mov ecx, dword [n] ; Schleifen-Counter setzen
+	mov eax, 0 ; fib(0) LSB
+	mov edx, 0 ; fib(0) MSB
+	mov esi, 1 ; fib(1) LSB
+	mov edi, 0 ; fib(1) MSB
+	mov ecx, 0 ; Zähler initialisieren
+			; sondern hochzählend mit Sprung
 
 schleife:
-	pop dword [z2h]
-	pop dword [z1h]
-	pop dword [z2l]
-	pop dword [z1l]
+	cmp ecx, dword [n] ; bis fib(n) berechnet?
+	je fertig
 
-	mov ebx, dword [z2l]
-	mov eax, dword [z1l]
-	add eax, ebx
-	push ebx
-	push eax
-	mov ebx, dword[z2h]
-	mov eax, dword[z1h]
-	adc eax, ebx
-	push ebx
-	push eax
-	loop schleife
+	xchg eax, esi 	; tausche LSB fib(i+1) und fib(i)
+	xchg edx, edi 	; tausche MSB fib(i+1) und fib(i)
+	add eax, esi	; LSB fib(i+2) = fib(i) + fib(i+1)
+	adc edx, edi	; MSB fib(i+2) = fib(i) + fib(i+1) + CF LSB
+	jc fehler	; wenn Überlauf (CF), dann 64 Bit Überlauf
 
-speichern:
-	pop dword [z2h]
-        pop dword [z1h]
-        pop dword [z2l]
-        pop dword [z1l]
+	inc ecx		; Zaehler i++
+	jmp schleife
 
-	mov edx, dword [z2h]
-	mov eax, dword [z2l]
-	
-	mov dword [ergebnis], eax
-	mov dword [ergebnis+1], edx
+fehler:
+	mov eax, 0 ; eax auf 0 setzen bei 64 Bit Überlauf
+	mov edx, 0 ; edx auf 0
 
-exit:
-	mov esp, ebp
-	pop ebp
+fertig:
+	mov dword [ergebnis], eax	; Ergebnis sichern dabei
+	mov dword [ergebnis+4], edx	; wegen Little Endian das MSB zuletzt
 
-	mov ebx, 0
-	mov eax, 1
-	int 0x80
+	mov ebx, 0	; Exit-Code auf 0 setzen
+	mov eax, 1	; erfolgreich ausgeführt
+	int 0x80	; und beendet

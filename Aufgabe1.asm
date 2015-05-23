@@ -10,14 +10,15 @@ main:
 	mov ecx, dword [n]
 	
 	cmp ecx, 0 	;prüfen n auf 0, da sonst endlosschleife
-	jz exit
+	je exit
 
-schleife:
+l1:
 	mul ecx
-	mov dword [ergebnis], eax
-	loop schleife
+	loop l1
 
 exit:
+	mov dword [ergebnis], eax
+
 	mov ebx, 0
 	mov eax, 1
 	int 0x80
